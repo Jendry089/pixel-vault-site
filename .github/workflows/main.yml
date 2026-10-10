@@ -91,3 +91,24 @@ jobs:
           done < <(find "$SITE_DIR" -type f -print0)
 
           echo "Upload finished successfully."
+
+      - name: Purge BunnyCDN cache
+        env:
+          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+          BUNNY_PULL_ZONE_ID: ${{ secrets.BUNNY_PULL_ZONE_ID }}
+        if: env.BUNNY_API_KEY != '' && env.BUNNY_PULL_ZONE_ID != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 3 \
+            -X POST \
+            -H "AccessKey: $BUNNY_API_KEY" \
+            "https://api.bunny.net/pullzone/$BUNNY_PULL_ZONE_ID/purgeCache"
+          echo "BunnyCDN cache purge requested."
+
+      - name: Warn if automatic cache purge is not configured
+        env:
+          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+          BUNNY_PULL_ZONE_ID: ${{ secrets.BUNNY_PULL_ZONE_ID }}
+        if: env.BUNNY_API_KEY == '' || env.BUNNY_PULL_ZONE_ID == ''
+        run: echo "::warning::Upload succeeded, but automatic cache purge is not configured. Add BUNNY_API_KEY and BUNNY_PULL_ZONE_ID repository secrets."

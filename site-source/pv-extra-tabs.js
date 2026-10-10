@@ -9,9 +9,78 @@
     panel.innerHTML='<div class="pvx-head"><strong>PIXEL VAULT · TOOLS</strong><button class="pvx-close" type="button">Close ✕</button></div><div class="pvx-tabs" role="tablist"><button class="pvx-tab" data-tab="weather" aria-selected="true">Weather</button><button class="pvx-tab" data-tab="spotify" aria-selected="false">Spotify</button><button class="pvx-tab" data-tab="developer" aria-selected="false">Developer</button><button class="pvx-tab" data-tab="battery" aria-selected="false">Battery</button></div><div class="pvx-content" id="pvx-content"></div>';
     document.body.appendChild(launch);document.body.appendChild(panel);
     var content=panel.querySelector('#pvx-content'), active='weather', battery=null;
+    function renderSpotify(){
+      var clientIdKey='pvx_spotify_client_id', tokenKey='pvx_spotify_access_token', expiryKey='pvx_spotify_token_expiry';
+      var clientId=localStorage.getItem(clientIdKey)||'';
+      function esc(v){return String(v==null?'':v).replace(/[&<>"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch];});}
+      content.innerHTML='<div class="pvx-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-size:24px">♫</span><div><strong style="font-size:18px">Spotify Search</strong><div class="pvx-muted">Search Spotify from inside Pixel Vault</div></div></div><form id="pvx-spotify-config" class="pvx-row" style="margin-bottom:12px"><input id="pvx-spotify-client-id" aria-label="Spotify Client ID" placeholder="Spotify Developer Client ID" required><button class="pvx-action" type="submit">Connect</button></form><div id="pvx-spotify-status" class="pvx-muted" role="status">Enter your Spotify app Client ID and connect to enable official search.</div><form id="pvx-spotify-search" class="pvx-row" style="margin-top:12px"><input id="pvx-spotify-query" aria-label="Search Spotify" placeholder="Search songs, artists, albums, playlists…" required><button class="pvx-action" type="submit">Search</button></form><div id="pvx-spotify-results" style="margin-top:12px"></div><div id="pvx-spotify-player" style="margin-top:12px"></div><div class="pvx-muted" style="margin-top:12px">Search and playback use Spotify’s official API and embedded player. Some playback features may require signing in or Premium.</div></div>';
+      var config=content.querySelector('#pvx-spotify-config'), idInput=content.querySelector('#pvx-spotify-client-id'), status=content.querySelector('#pvx-spotify-status'), results=content.querySelector('#pvx-spotify-results'), player=content.querySelector('#pvx-spotify-player');
+      idInput.value=clientId;
+      function redirectUri(){return location.origin+location.pathname;}
+      function randomString(n){var a=new Uint8Array(n);crypto.getRandomValues(a);return Array.from(a).map(function(x){return x.toString(16).padStart(2,'0');}).join('');}
+      function b64url(bytes){return btoa(String.fromCharCode.apply(null,new Uint8Array(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+      async function startConnect(id){
+        if(!id){status.textContent='Enter your Spotify Client ID first.';return;}
+        localStorage.setItem(clientIdKey,id);
+        var verifier=randomString(32), state=randomString(16);
+        var digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier));
+        var challenge=b64url(digest);
+        sessionStorage.setItem('pvx_spotify_verifier',verifier);
+        sessionStorage.setItem('pvx_spotify_state',state);
+        var params=new URLSearchParams({client_id:id,response_type:'code',redirect_uri:redirectUri(),code_challenge_method:'S256',code_challenge:challenge,state:state});
+        location.assign('https://accounts.spotify.com/authorize?'+params.toString());
+      }
+      async function handleCallback(){
+        var params=new URLSearchParams(location.search), code=params.get('code'), err=params.get('error');
+        if(err){history.replaceState({},document.title,location.pathname);status.textContent='Spotify authorization was cancelled or denied.';return;}
+        if(!code)return;
+        var state=params.get('state'), expected=sessionStorage.getItem('pvx_spotify_state'), verifier=sessionStorage.getItem('pvx_spotify_verifier');
+        history.replaceState({},document.title,location.pathname);
+        if(!clientId||!verifier||!state||state!==expected){status.textContent='Spotify sign-in could not be verified. Press Connect and try again.';return;}
+        status.textContent='Finishing Spotify sign-in…';
+        try{
+          var response=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:clientId,grant_type:'authorization_code',code:code,redirect_uri:redirectUri(),code_verifier:verifier})});
+          var data=await response.json();
+          if(!response.ok||!data.access_token)throw Error(data.error_description||'Spotify token exchange failed.');
+          localStorage.setItem(tokenKey,data.access_token);localStorage.setItem(expiryKey,String(Date.now()+Number(data.expires_in||3600)*1000));sessionStorage.removeItem('pvx_spotify_verifier');sessionStorage.removeItem('pvx_spotify_state');
+          status.textContent='Connected to Spotify. Search for music below.';
+        }catch(e){status.textContent='Spotify sign-in failed: '+(e.message||'Check the Client ID and registered redirect URI.');}
+      }
+      async function searchSpotify(){
+        var q=content.querySelector('#pvx-spotify-query').value.trim();
+        if(!q)return;
+        var token=localStorage.getItem(tokenKey), expiry=Number(localStorage.getItem(expiryKey)||0);
+        if(!token||Date.now()>expiry){status.textContent='Connect to Spotify first (or reconnect if your session expired).';return;}
+        status.textContent='Searching Spotify…';results.innerHTML='';player.innerHTML='';
+        try{
+          var url='https://api.spotify.com/v1/search?'+new URLSearchParams({q:q,type:'track,album,artist,playlist',limit:'5',market:'US'});
+          var response=await fetch(url,{headers:{Authorization:'Bearer '+token}});
+          var data=await response.json();
+          if(response.status===401){localStorage.removeItem(tokenKey);localStorage.removeItem(expiryKey);throw Error('Spotify session expired. Press Connect again.');}
+          if(!response.ok)throw Error(data.error&&data.error.message||'Spotify search request failed.');
+          var all=[];
+          ['tracks','albums','artists','playlists'].forEach(function(key){(data[key]&&data[key].items||[]).forEach(function(item){if(item&&item.id)all.push(item);});});
+          if(!all.length){status.textContent='No Spotify results found for “'+q+'”.';return;}
+          status.textContent='Search results for “'+q+'”';
+          results.innerHTML=all.map(function(item){
+            var kind=item.type||'track', image=(item.images&&item.images[0]&&item.images[0].url)||(item.album&&item.album.images&&item.album.images[0]&&item.album.images[0].url)||'';
+            var sub=item.artists?item.artists.map(function(a){return a.name;}).join(', '):(item.owner&&item.owner.display_name?item.owner.display_name:(kind==='artist'?'Artist':kind));
+            return '<div class="pvx-card" style="display:flex;gap:10px;align-items:center">'+(image?'<img src="'+esc(image)+'" alt="" style="width:58px;height:58px;object-fit:cover;border-radius:8px">':'')+'<div style="min-width:0;flex:1"><strong>'+esc(item.name)+'</strong><div class="pvx-muted">'+esc(kind.toUpperCase())+' · '+esc(sub)+'</div><button class="pvx-action" type="button" data-pvx-play="'+esc(kind)+'" data-pvx-id="'+esc(item.id)+'" style="margin-top:7px">Play here</button></div></div>';
+          }).join('');
+          results.querySelectorAll('[data-pvx-play]').forEach(function(btn){btn.addEventListener('click',function(){
+            var kind=btn.getAttribute('data-pvx-play'), id=btn.getAttribute('data-pvx-id');
+            player.innerHTML='<iframe title="Spotify player" src="https://open.spotify.com/embed/'+encodeURIComponent(kind)+'/'+encodeURIComponent(id)+'?utm_source=pixelvault" style="display:block;width:100%;height:352px;border:0;border-radius:12px;background:#111" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>';
+          });});
+        }catch(e){status.textContent=e.message||'Spotify search is unavailable right now.';}
+      }
+      config.addEventListener('submit',function(ev){ev.preventDefault();startConnect(idInput.value.trim()).catch(function(e){status.textContent='Could not start Spotify sign-in: '+(e.message||'browser security error');});});
+      content.querySelector('#pvx-spotify-search').addEventListener('submit',function(ev){ev.preventDefault();searchSpotify();});
+      if(clientId&&localStorage.getItem(tokenKey)&&Date.now()<Number(localStorage.getItem(expiryKey)||0))status.textContent='Spotify is connected. Search for music below.';
+      handleCallback();
+    }
     function show(tab){active=tab;panel.querySelectorAll('.pvx-tab').forEach(function(b){b.setAttribute('aria-selected',String(b.dataset.tab===tab));});
       if(tab==='weather') content.innerHTML='<div class="pvx-card"><strong>Local weather</strong><p class="pvx-muted">Enter a city to get current conditions and today\'s forecast. Uses Open-Meteo public weather data.</p><form id="pvx-weather-form" class="pvx-row"><input id="pvx-city" aria-label="City" placeholder="City, e.g. Worcester, MA" required><button class="pvx-action">Get weather</button></form><div id="pvx-weather-result" class="pvx-muted" style="margin-top:12px">Weather has not been loaded yet.</div></div>';
-      else if(tab==='spotify') content.innerHTML='<div class="pvx-card" style="padding:0;overflow:hidden"><iframe title="Spotify" src="https://open.spotify.com/" style="display:block;width:100%;height:min(72vh,760px);min-height:520px;border:0;background:#000" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="eager"></iframe></div>';
+      else if(tab==='spotify') { renderSpotify(); }
       else if(tab==='developer') content.innerHTML='<div class="pvx-card"><strong>Developer Mode</strong><p class="pvx-muted">Status check only. Editing the live site is restricted to the authorized owner account.</p><div id="pvx-dev-status"></div></div><div class="pvx-card"><strong>Runtime diagnostics</strong><div id="pvx-diagnostics" class="pvx-muted"></div></div>';
       else content.innerHTML='<div class="pvx-card"><strong>Device battery</strong><div id="pvx-battery-value" class="pvx-big">Checking…</div><div id="pvx-battery-detail" class="pvx-muted">Battery access depends on browser support.</div></div>';
       if(tab==='developer'){

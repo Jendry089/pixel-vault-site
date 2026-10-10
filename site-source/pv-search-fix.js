@@ -3,7 +3,7 @@
   'use strict';
   if (window.__PV_SEARCH_NAV_FIX__) return;
   window.__PV_SEARCH_NAV_FIX__ = true;
-  var API_KEY_STORE = 'pv_youtube_data_api_key';
+  var YOUTUBE_PROXY = 'https://pixel-vault-search.hendryjavier26.workers.dev/api/youtube';
   var CSS_ID = 'pv-youtube-search-style';
 
   function tabFor(node) { return node && node.closest ? node.closest('.tab-content') : null; }
@@ -56,20 +56,11 @@
     return box;
   }
   function showSetup(box, message) {
-    box.innerHTML = '<div class="pvyt-panel"><strong>YouTube Search · Setup</strong>' +
-      '<p class="pvyt-muted">' + esc(message || 'To show video results inside Pixel Vault, configure a YouTube Data API key. The official API is used; Pixel Vault does not scrape YouTube pages.') + '</p>' +
-      '<form class="pvyt-config" id="pvyt-key-form"><input id="pvyt-api-key" type="password" autocomplete="off" aria-label="YouTube Data API key" placeholder="YouTube Data API key" required><button class="pvyt-btn" type="submit">Save key</button></form>' +
-      '<p class="pvyt-muted">For public, site-wide search, the owner should configure a server-side endpoint instead of publishing a key in the page. A browser key should be restricted to the Pixel Vault website and YouTube Data API.</p>' +
-      '<div class="pvyt-config"><a class="pvyt-btn" href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">API credentials</a><button class="pvyt-btn" type="button" data-pvyt-open>Search YouTube website</button></div>' +
+    box.innerHTML = '<div class="pvyt-panel"><strong>YouTube Search</strong>' +
+      '<p class="pvyt-muted">' + esc(message || 'YouTube search is not configured on the server yet.') + '</p>' +
+      '<p class="pvyt-muted">Pixel Vault sends searches to its fixed, protected search endpoint. The API key is kept on the server and is not stored in this browser.</p>' +
+      '<div class="pvyt-config"><button class="pvyt-btn" type="button" data-pvyt-open>Open YouTube search in this tab</button></div>' +
       '<div class="pvyt-status" role="status"></div></div>';
-    var form = box.querySelector('#pvyt-key-form');
-    form.addEventListener('submit', function (ev) {
-      ev.preventDefault();
-      var key = box.querySelector('#pvyt-api-key').value.trim();
-      if (!key) return;
-      localStorage.setItem(API_KEY_STORE, key);
-      box.querySelector('.pvyt-status').textContent = 'Key saved in this browser. Search again to load official results.';
-    });
     box.querySelector('[data-pvyt-open]').addEventListener('click', function () {
       var tab = box.closest('.tab-content'), q = queryIn(tab);
       if (q) location.assign('https://www.youtube.com/results?search_query=' + encodeURIComponent(q));
@@ -81,16 +72,13 @@
     if (!q) return;
     ensureStyle();
     var box = getResults(tab);
-    var key = localStorage.getItem(API_KEY_STORE) || '';
-    if (!key) { showSetup(box); return; }
     box.innerHTML = '<div class="pvyt-panel"><div class="pvyt-status" role="status">Searching YouTube…</div><div class="pvyt-grid"></div><div class="pvyt-player" hidden></div></div>';
     var status = box.querySelector('.pvyt-status'), grid = box.querySelector('.pvyt-grid'), player = box.querySelector('.pvyt-player');
     try {
-      var params = new URLSearchParams({ part: 'snippet', q: q, type: 'video', maxResults: '12', safeSearch: 'moderate', videoEmbeddable: 'true', key: key });
-      var response = await fetch('https://www.googleapis.com/youtube/v3/search?' + params.toString());
+      var response = await fetch(YOUTUBE_PROXY + '?q=' + encodeURIComponent(q), { method: 'GET', credentials: 'omit' });
       var data = await response.json();
       if (!response.ok) {
-        var apiMessage = data && data.error && data.error.message ? data.error.message : 'YouTube search request failed.';
+        var apiMessage = data && typeof data.error === 'string' ? data.error : (data && data.error && data.error.message ? data.error.message : 'YouTube search request failed.');
         if (response.status === 400 || response.status === 403) apiMessage += ' Check the key, YouTube Data API v3, and website/API restrictions.';
         throw new Error(apiMessage);
       }

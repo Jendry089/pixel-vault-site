@@ -1,9 +1,9 @@
-```yaml
 name: Publish Pixel Vault to BunnyCDN
 
-on:
+'on':
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -17,35 +17,48 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Extract website ZIP
+        shell: bash
         run: |
-          set -e
+          set -euo pipefail
           mkdir -p extracted
-          find . -maxdepth 1 -iname '*.zip' -print0 |
-            while IFS= read -r -d '' zipfile; do
-              unzip -oq "$zipfile" -d extracted
-            done
+
+          found_zip=false
+          while IFS= read -r -d '' zipfile; do
+            found_zip=true
+            unzip -oq "$zipfile" -d extracted
+          done < <(find . -maxdepth 1 -type f -iname '*.zip' -print0)
+
+          if [ "$found_zip" = false ]; then
+            echo "ERROR: No website ZIP found in the repository root."
+            exit 1
+          fi
 
           index=$(find extracted -type f -name index.html -print -quit)
           if [ -z "$index" ]; then
-            echo "ERROR: Could not find index.html in the ZIP."
+            echo "ERROR: Could not find index.html inside the ZIP."
             exit 1
           fi
+
           echo "SITE_DIR=$(dirname "$index")" >> "$GITHUB_ENV"
 
       - name: Upload website to BunnyCDN
+        shell: bash
         env:
           BUNNY_KEY: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
         run: |
-          set -e
+          set -euo pipefail
+
           if [ -z "$BUNNY_KEY" ]; then
-            echo "Add the BUNNY_STORAGE_PASSWORD repository secret."
+            echo "ERROR: Add the BUNNY_STORAGE_PASSWORD repository secret."
             exit 1
           fi
 
           while IFS= read -r -d '' file; do
             rel="${file#"$SITE_DIR"/}"
-            path=$(python3 -c 'import sys,urllib.parse; print("/".join(urllib.parse.quote(p,safe="") for p in sys.argv[1].split("/")))' "$rel")
+            path=$(python3 -c 'import sys,urllib.parse; print("/".join(urllib.parse.quote(p, safe="") for p in sys.argv[1].split("/")))' "$rel")
+
             curl --fail --silent --show-error \
+              --retry 3 \
               -X PUT \
               -H "AccessKey: $BUNNY_KEY" \
               -H "Content-Type: application/octet-stream" \
@@ -53,5 +66,4 @@ jobs:
               "https://ny.storage.bunnycdn.com/pixelvault08/$path"
           done < <(find "$SITE_DIR" -type f -print0)
 
-          echo "Upload finished."
-```
+          echo "Upload finished successfully."

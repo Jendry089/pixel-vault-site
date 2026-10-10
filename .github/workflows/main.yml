@@ -53,13 +53,13 @@ jobs:
           p = pathlib.Path(sys.argv[1])
           s = p.read_text(encoding='utf-8')
           tag = '<script src="./pv-extra-tabs.js" defer></script>'
-          if tag not in s:
+          if tag not in s and '<!-- PIXEL VAULT TOOLS INLINE -->' not in s:
               pos = s.lower().rfind('</body>')
               if pos < 0:
                   raise SystemExit('ERROR: Cannot inject tools script: closing body tag missing.')
               s = s[:pos] + tag + '\n' + s[pos:]
               p.write_text(s, encoding='utf-8')
-          print('Injected Pixel Vault tools panel.')
+          print('Pixel Vault tools panel is inline or injected.')
           PY
           fi
 

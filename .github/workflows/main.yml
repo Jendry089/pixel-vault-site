@@ -106,6 +106,32 @@ jobs:
             "https://api.bunny.net/pullzone/$BUNNY_PULL_ZONE_ID/purgeCache"
           echo "BunnyCDN cache purge requested."
 
+      - name: Verify the live site serves the published homepage
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Checking the public homepage after upload and cache purge..."
+          ok=false
+          for attempt in 1 2 3 4 5 6; do
+            if curl --fail --silent --show-error --max-time 20 \
+              "https://pixelvault08.b-cdn.net/?pv_deploy_check=${GITHUB_SHA}-${attempt}" \
+              -o /tmp/pv-live-index.html; then
+              if grep -q "PIXEL VAULT TOOLS INLINE" /tmp/pv-live-index.html && grep -q "PIXEL VAULT" /tmp/pv-live-index.html; then
+                echo "Verified: the public CDN is serving the expected Pixel Vault homepage."
+                ok=true
+                break
+              fi
+              echo "Attempt ${attempt}: CDN returned a page without the expected homepage marker."
+            else
+              echo "Attempt ${attempt}: public CDN request failed."
+            fi
+            sleep 10
+          done
+          if [ "$ok" != true ]; then
+            echo "::error::Storage upload succeeded, but the public Pull Zone did not serve the expected Pixel Vault homepage after cache purge. The Pull Zone must be linked to Storage Zone pixelvault08 and serve the storage root."
+            exit 1
+          fi
+
       - name: Warn if automatic cache purge is not configured
         env:
           BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}

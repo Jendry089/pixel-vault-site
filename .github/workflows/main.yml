@@ -6,6 +6,10 @@ name: Publish Pixel Vault to BunnyCDN
       - main
   workflow_dispatch:
 
+concurrency:
+  group: pixel-vault-bunny-production
+  cancel-in-progress: false
+
 permissions:
   contents: read
 

@@ -39,7 +39,16 @@ jobs:
             exit 1
           fi
 
-          echo "SITE_DIR=$(dirname "$index")" >> "$GITHUB_ENV"
+          site_dir=$(dirname "$index")
+
+          # Prefer the separately maintained source file when it exists.
+          # This makes future fixes to site-source/index.html publish to BunnyCDN.
+          if [ -f "site-source/index.html" ]; then
+            cp "site-source/index.html" "$site_dir/index.html"
+            echo "Using site-source/index.html as the published entry page."
+          fi
+
+          echo "SITE_DIR=$site_dir" >> "$GITHUB_ENV"
 
       - name: Upload website to BunnyCDN
         shell: bash

@@ -41,11 +41,26 @@ jobs:
 
           site_dir=$(dirname "$index")
 
-          # Prefer the separately maintained source file when it exists.
-          # This makes future fixes to site-source/index.html publish to BunnyCDN.
           if [ -f "site-source/index.html" ]; then
             cp "site-source/index.html" "$site_dir/index.html"
             echo "Using site-source/index.html as the published entry page."
+          fi
+
+          if [ -f "site-source/pv-extra-tabs.js" ]; then
+            cp "site-source/pv-extra-tabs.js" "$site_dir/pv-extra-tabs.js"
+            python3 - "$site_dir/index.html" <<'PY'
+          import pathlib, sys
+          p = pathlib.Path(sys.argv[1])
+          s = p.read_text(encoding='utf-8')
+          tag = '<script src="./pv-extra-tabs.js" defer></script>'
+          if tag not in s:
+              pos = s.lower().rfind('</body>')
+              if pos < 0:
+                  raise SystemExit('ERROR: Cannot inject tools script: closing body tag missing.')
+              s = s[:pos] + tag + '\n' + s[pos:]
+              p.write_text(s, encoding='utf-8')
+          print('Injected Pixel Vault tools panel.')
+          PY
           fi
 
           echo "SITE_DIR=$site_dir" >> "$GITHUB_ENV"

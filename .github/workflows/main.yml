@@ -101,6 +101,84 @@ jobs:
           PY
           fi
 
+          # Public items are only shared after files have been deliberately committed into these folders.
+          mkdir -p "$site_dir/public-games" "$site_dir/public-movies" "site-source/public-game-imports" "site-source/public-movies"
+          while IFS= read -r -d '' package; do
+            base="$(basename "$package" .zip)"
+            slug="$(python3 - "$base" <<'PY'
+          import re, sys
+          value = re.sub(r'[^a-z0-9]+', '-', sys.argv[1].lower()).strip('-')[:55]
+          print(value or 'pixel-vault-game')
+          PY
+          )"
+            target="$site_dir/public-games/$slug"
+            mkdir -p "$target"
+            python3 - "$package" <<'PY'
+          import sys, zipfile
+          z = zipfile.ZipFile(sys.argv[1])
+          for item in z.infolist():
+              name = item.filename.replace("\\", "/")
+              if name.startswith("/") or any(part == ".." for part in name.split("/")):
+                  raise SystemExit("Unsafe path in public game ZIP: " + item.filename)
+          PY
+            unzip -oq "$package" -d "$target"
+            echo "Prepared public game package: $slug"
+          done < <(find "site-source/public-game-imports" -maxdepth 1 -type f -iname '*.zip' -print0)
+          while IFS= read -r -d '' movie; do
+            rel="$(python3 - "$movie" <<'PY'
+          import os, sys
+          print(os.path.relpath(sys.argv[1], "site-source/public-movies"))
+          PY
+          )"
+            mkdir -p "$site_dir/public-movies/$(dirname "$rel")"
+            cp "$movie" "$site_dir/public-movies/$rel"
+          done < <(find "site-source/public-movies" -type f ! -name 'README.md' ! -name '.gitkeep' -print0)
+          python3 - "$site_dir" <<'PY'
+          import json, pathlib, sys, urllib.parse
+          root = pathlib.Path(sys.argv[1]).resolve()
+          items = []
+          def public_url(path):
+              rel = pathlib.Path(path).resolve().relative_to(root).as_posix()
+              return "./" + urllib.parse.quote(rel, safe="/-_.~")
+          def add_game(folder, manifest=None):
+              if manifest:
+                  try:
+                      meta = json.loads(manifest.read_text(encoding="utf-8"))
+                  except Exception as exc:
+                      raise SystemExit("Invalid .pv-game.json in " + str(folder) + ": " + str(exc))
+                  entry_rel = pathlib.PurePosixPath(str(meta.get("entry", "index.html")).replace("\\", "/"))
+                  if entry_rel.is_absolute() or ".." in entry_rel.parts:
+                      raise SystemExit("Unsafe game entry path in " + str(manifest))
+                  entry = (folder / pathlib.Path(*entry_rel.parts)).resolve()
+                  if not entry.is_relative_to(folder.resolve()) or not entry.is_file():
+                      raise SystemExit("Game entry file is missing in " + str(folder))
+                  items.append({"kind":"game", "name":str(meta.get("name") or folder.name), "url":public_url(entry), "size":entry.stat().st_size})
+              else:
+                  htmls = sorted(folder.rglob("index.html"))
+                  if not htmls:
+                      htmls = sorted(p for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in (".html", ".htm"))
+                  for entry in htmls:
+                      if entry.is_file():
+                          name = folder.name if entry.name.lower() == "index.html" else entry.stem
+                          items.append({"kind":"game", "name":name, "url":public_url(entry), "size":entry.stat().st_size})
+          games_root = root / "public-games"
+          if games_root.exists():
+              for folder in sorted(games_root.iterdir()):
+                  if not folder.is_dir(): continue
+                  manifest = folder / ".pv-game.json"
+                  if manifest.is_file(): add_game(folder, manifest)
+                  else: add_game(folder)
+          movies_root = root / "public-movies"
+          video_exts = {".mp4", ".webm", ".m4v", ".mov", ".ogv", ".ogg"}
+          if movies_root.exists():
+              for movie in sorted(movies_root.rglob("*")):
+                  if movie.is_file() and movie.suffix.lower() in video_exts:
+                      items.append({"kind":"movie", "name":movie.stem, "url":public_url(movie), "size":movie.stat().st_size})
+          items.sort(key=lambda x: (x["kind"], x["name"].lower()))
+          (root / "public-catalog.json").write_text(json.dumps({"version":1,"items":items}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print("Generated public catalog with " + str(len(items)) + " public item(s).")
+          PY
+
           echo "SITE_DIR=$site_dir" >> "$GITHUB_ENV"
 
       - name: Upload website to BunnyCDN
@@ -155,9 +233,14 @@ jobs:
               "https://pixelvault08.b-cdn.net/?pv_deploy_check=${GITHUB_SHA}-${attempt}" \
               -o /tmp/pv-live-index.html; then
               if grep -q "PIXEL VAULT TOOLS INLINE" /tmp/pv-live-index.html && grep -q "PIXEL VAULT" /tmp/pv-live-index.html && grep -q "pv-search-fix.js" /tmp/pv-live-index.html && grep -q "pv-library-tools.js" /tmp/pv-live-index.html; then
-                echo "Verified: the public CDN serves Pixel Vault with search fixes and local library tools."
-                ok=true
-                break
+                if curl --fail --silent --show-error --max-time 20 "https://pixelvault08.b-cdn.net/public-catalog.json?verify=1" -o /tmp/pv-live-catalog.json && python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert isinstance(d.get("items"), list)' /tmp/pv-live-catalog.json; then
+                  echo "Verified: public catalog JSON is live."
+                  echo "Verified: the public CDN serves Pixel Vault with search fixes, local library tools, and a public catalog."
+                  ok=true
+                  break
+                else
+                  echo "Attempt $attempt: public catalog JSON is missing or invalid."
+                fi
               fi
               echo "Attempt ${attempt}: CDN returned a page without the expected homepage/search-fix marker."
             else

@@ -91,7 +91,7 @@
     '#pvl-panel *{box-sizing:border-box}#pvl-panel button,#pvl-stage button{font:inherit;cursor:pointer}',
     '.pvl-head{position:sticky;top:0;z-index:3;background:#0b1930ee;backdrop-filter:blur(14px);padding:14px;border-bottom:1px solid #29436a;display:flex;align-items:center;justify-content:space-between;gap:12px}',
     '.pvl-head strong{letter-spacing:.07em;font-size:13px}.pvl-close{background:#182d4b;border:1px solid #35547c;color:white;border-radius:9px;padding:7px 10px}',
-    '.pvl-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 12px 4px}.pvl-tab{border:1px solid #304a72;background:#0d203a;color:#bbcff0;border-radius:10px;padding:10px;font-weight:800}.pvl-tab[aria-selected=true]{background:linear-gradient(135deg,#2c7ee8,#6a4ce8);color:white;border-color:#8ebaff}',
+    '.pvl-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px 12px 4px}.pvl-tab{border:1px solid #304a72;background:#0d203a;color:#bbcff0;border-radius:10px;padding:10px;font-weight:800}.pvl-tab[aria-selected=true]{background:linear-gradient(135deg,#2c7ee8,#6a4ce8);color:white;border-color:#8ebaff}',
     '.pvl-content{padding:12px 14px 16px}.pvl-note{font-size:12px;line-height:1.55;color:#a8bbda;margin:6px 0 12px}.pvl-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}.pvl-action{border:1px solid #5184cb;background:linear-gradient(135deg,#2475d7,#5645bd);color:white;padding:9px 12px;border-radius:10px;font-weight:800}.pvl-action.secondary{background:#132844;border-color:#35527b;color:#dceaff}.pvl-hidden-input{display:none!important}',
     '.pvl-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:12px}.pvl-card{min-width:0;background:linear-gradient(145deg,#102441,#101b30);border:1px solid #29476d;border-radius:13px;padding:12px}.pvl-card strong{display:block;overflow-wrap:anywhere;line-height:1.35}.pvl-card small{display:block;color:#a9bddb;margin:6px 0 10px;line-height:1.4}.pvl-card-actions{display:flex;gap:7px;flex-wrap:wrap}.pvl-card-actions button{font-size:12px!important;padding:7px 9px!important}.pvl-empty{border:1px dashed #385477;border-radius:12px;padding:18px;color:#afc1dc;text-align:center;line-height:1.5}.pvl-status{font-size:12px;line-height:1.5;color:#b4c7e5;min-height:18px;margin-top:9px}.pvl-status.error{color:#ffb7ad}.pvl-status.good{color:#a9f1c2}',
     '#pvl-stage[hidden]{display:none!important}#pvl-stage{position:fixed;inset:0;z-index:2147483002;background:#040812;color:#eef5ff;display:flex;flex-direction:column;font:14px system-ui}#pvl-stage .pvl-stage-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:#09152a;border-bottom:1px solid #2d466a;min-height:54px}#pvl-stage .pvl-stage-title{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:100px}#pvl-stage .pvl-stage-bar button{border:1px solid #456b9c;background:#142b4a;color:white;padding:8px 11px;border-radius:9px;font-weight:800}#pvl-stage .pvl-stage-content{flex:1;min-height:0;display:flex;align-items:stretch;justify-content:center;background:#000}#pvl-stage iframe,#pvl-stage video{display:block;width:100%;height:100%;border:0;background:#000;object-fit:contain}',
@@ -112,13 +112,14 @@
     var launch = document.createElement('button'); launch.id = 'pvl-launch'; launch.type = 'button'; launch.textContent = '+ My Library'; launch.setAttribute('aria-expanded', 'false');
     var panel = document.createElement('section'); panel.id = 'pvl-panel'; panel.setAttribute('aria-label', 'My local games and movies');
     panel.innerHTML = '<div class="pvl-head"><strong>PIXEL VAULT · MY LIBRARY</strong><button class="pvl-close" type="button" data-pvl-close-panel>Close ×</button></div>' +
-      '<div class="pvl-tabs" role="tablist"><button class="pvl-tab" type="button" data-pvl-tab="games" aria-selected="true">My Games</button><button class="pvl-tab" type="button" data-pvl-tab="movies" aria-selected="false">My Movies</button></div>' +
+      '<div class="pvl-tabs" role="tablist"><button class="pvl-tab" type="button" data-pvl-tab="games" aria-selected="true">My Games</button><button class="pvl-tab" type="button" data-pvl-tab="movies" aria-selected="false">My Movies</button><button class="pvl-tab" type="button" data-pvl-tab="catalog" aria-selected="false">Public Catalog</button></div>' +
       '<div class="pvl-content"><div class="pvl-note" id="pvl-instructions">Import HTML games as individual files or choose a whole folder to include images, scripts, audio, and styles. Imports stay in this browser on this device.</div>' +
       '<div class="pvl-actions"><button class="pvl-action" type="button" id="pvl-pick-game">＋ Add game files</button><button class="pvl-action secondary" type="button" id="pvl-pick-folder">＋ Add game folder</button><button class="pvl-action" type="button" id="pvl-pick-movie" hidden>＋ Add movie files</button></div>' +
       '<input id="pvl-game-input" class="pvl-hidden-input" type="file" multiple accept=".html,.htm,.js,.mjs,.css,.json,.wasm,.png,.jpg,.jpeg,.webp,.gif,.svg,.mp3,.ogg,.wav,.m4a,.mp4,.webm,.woff,.woff2,.ttf,.xml,.txt">' +
       '<input id="pvl-folder-input" class="pvl-hidden-input" type="file" multiple webkitdirectory directory>' +
       '<input id="pvl-movie-input" class="pvl-hidden-input" type="file" multiple accept="video/*,.mp4,.webm,.m4v,.mov,.ogv">' +
       '<div id="pvl-status" class="pvl-status" role="status"></div><div id="pvl-list" class="pvl-list"></div>' +
+      '<div class="pvl-card" id="pvl-publish-box"><strong>Share with everyone</strong><small>Local imports are private until you publish them. Export a game ZIP or movie file, then upload it to the matching GitHub folder. The next automatic deployment adds it to the Public Catalog for every visitor.</small><div class="pvl-card-actions"><button type="button" class="pvl-action secondary" id="pvl-upload-games">Upload game ZIP to GitHub</button><button type="button" class="pvl-action secondary" id="pvl-upload-movies">Upload movie to GitHub</button></div></div>' +
       '<p class="pvl-note">Local imports are private to this browser profile and are not uploaded to the public site. Large imports depend on available device storage. Folder games work best when their HTML uses ordinary relative file paths; some games that require server-side features may not run locally.</p></div>';
     var stage = document.createElement('div'); stage.id = 'pvl-stage'; stage.hidden = true; stage.setAttribute('role', 'dialog'); stage.setAttribute('aria-modal', 'true'); stage.setAttribute('aria-label', 'Local game or movie player');
     stage.innerHTML = '<div class="pvl-stage-bar"><strong class="pvl-stage-title" id="pvl-stage-title">My Library</strong><button type="button" data-pvl-fullscreen>Fullscreen</button><button type="button" data-pvl-close-stage>Back to library</button></div><div class="pvl-stage-content" id="pvl-stage-content"></div>';
@@ -133,10 +134,13 @@
       panel.querySelector('#pvl-pick-game').hidden = tab !== 'games';
       panel.querySelector('#pvl-pick-folder').hidden = tab !== 'games';
       panel.querySelector('#pvl-pick-movie').hidden = tab !== 'movies';
+      panel.querySelector('#pvl-publish-box').hidden = tab === 'catalog';
       panel.querySelector('#pvl-instructions').textContent = tab === 'games' ?
-        'Import HTML games as files, or choose a whole folder to include images, scripts, audio, and styles. Imports stay in this browser on this device.' :
-        'Add video files to play them here with controls. Movie files stay in this browser on this device and are not uploaded.';
-      renderList();
+        'Add HTML game files or an entire folder, including supporting images, scripts, audio, and styles. These imports stay private in this browser until you export and publish them.' :
+        (tab === 'movies' ?
+          'Add video files to play them here. These imports stay private on this device until you download and publish them.' :
+          'Public Catalog is shared with every visitor. It lists games and videos uploaded to the public folders in the Pixel Vault GitHub repository.');
+      if (tab === 'catalog') renderPublicCatalog(); else renderList();
     }
     function renderList() {
       setStatus('');
@@ -153,6 +157,7 @@
           var tag = currentTab === 'games' ? 'HTML game · ' + (item.path || item.name) : 'Video · ' + size;
           return '<article class="pvl-card"><strong>' + esc(title) + '</strong><small>' + esc(tag) + (currentTab === 'games' ? ' · ' + size : '') + '</small><div class="pvl-card-actions">' +
             '<button type="button" class="pvl-action" data-pvl-play="' + esc(item.id) + '">' + (currentTab === 'games' ? 'Play game' : 'Watch movie') + '</button>' +
+            (currentTab === 'games' ? '<button type="button" class="pvl-action secondary" data-pvl-export="' + esc(item.id) + '">Export public ZIP</button>' : '<button type="button" class="pvl-action secondary" data-pvl-public-download="' + esc(item.id) + '">Download to publish</button>') +
             '<button type="button" class="pvl-action secondary" data-pvl-remove="' + esc(item.groupId) + '">Remove</button></div></article>';
         }).join('');
       }).catch(function (e) {
@@ -197,6 +202,143 @@
       setStatus('Adding ' + files.length + ' video file(s)…');
       putMany(records).then(function () { setStatus('Added ' + files.length + ' movie/video file(s).', 'good'); renderList(); })
         .catch(function (e) { setStatus((e.message || 'Import failed') + ' Check available browser storage and try fewer files.', 'error'); });
+    }
+
+    function safeSlug(value) {
+      return String(value || 'pixel-vault-game').toLowerCase().replace(/\.[^.]+$/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 44) || 'pixel-vault-game';
+    }
+    function crc32(bytes) {
+      var crc = -1;
+      for (var i = 0; i < bytes.length; i++) {
+        crc ^= bytes[i];
+        for (var j = 0; j < 8; j++) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+      }
+      return (crc ^ -1) >>> 0;
+    }
+    function makeStoredZip(entries) {
+      return Promise.all(entries.map(function (entry) {
+        var name = normPath(entry.name);
+        return entry.blob.arrayBuffer().then(function (buffer) {
+          return { name: name, nameBytes: new TextEncoder().encode(name), bytes: new Uint8Array(buffer) };
+        });
+      })).then(function (prepared) {
+        var parts = [], central = [], offset = 0, centralSize = 0;
+        prepared.forEach(function (entry) {
+          if (!entry.name || entry.name.charAt(0) === '/' || entry.name.split('/').some(function (p) { return p === '..'; })) {
+            throw new Error('A game asset has an unsafe path and cannot be exported.');
+          }
+          var checksum = crc32(entry.bytes), nameBytes = entry.nameBytes, local = new Uint8Array(30 + nameBytes.length);
+          var lv = new DataView(local.buffer);
+          lv.setUint32(0, 0x04034b50, true); lv.setUint16(4, 20, true); lv.setUint16(6, 0x0800, true);
+          lv.setUint16(8, 0, true); lv.setUint16(10, 0, true); lv.setUint16(12, 0, true);
+          lv.setUint32(14, checksum, true); lv.setUint32(18, entry.bytes.length, true); lv.setUint32(22, entry.bytes.length, true);
+          lv.setUint16(26, nameBytes.length, true); lv.setUint16(28, 0, true); local.set(nameBytes, 30);
+          parts.push(local, entry.bytes);
+          var header = new Uint8Array(46 + nameBytes.length), cv = new DataView(header.buffer);
+          cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true);
+          cv.setUint16(8, 0x0800, true); cv.setUint16(10, 0, true); cv.setUint16(12, 0, true); cv.setUint16(14, 0, true);
+          cv.setUint32(16, checksum, true); cv.setUint32(20, entry.bytes.length, true); cv.setUint32(24, entry.bytes.length, true);
+          cv.setUint16(28, nameBytes.length, true); cv.setUint16(30, 0, true); cv.setUint16(32, 0, true);
+          cv.setUint16(34, 0, true); cv.setUint16(36, 0, true); cv.setUint32(38, 0, true); cv.setUint32(42, offset, true);
+          header.set(nameBytes, 46); central.push(header); centralSize += header.length; offset += local.length + entry.bytes.length;
+        });
+        var end = new Uint8Array(22), ev = new DataView(end.buffer);
+        ev.setUint32(0, 0x06054b50, true); ev.setUint16(4, 0, true); ev.setUint16(6, 0, true);
+        ev.setUint16(8, prepared.length, true); ev.setUint16(10, prepared.length, true);
+        ev.setUint32(12, centralSize, true); ev.setUint32(16, offset, true); ev.setUint16(20, 0, true);
+        return new Blob(parts.concat(central, [end]), { type: 'application/zip' });
+      });
+    }
+    function triggerDownload(blob, filename) {
+      var url = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
+    }
+    function exportGamePackage(id) {
+      setStatus('Preparing a ZIP for public publishing…');
+      getAll().then(function (items) {
+        var entry = items.find(function (x) { return x.id === id && x.kind === 'game'; });
+        if (!entry) throw new Error('That game is no longer in your local library.');
+        var group = items.filter(function (x) { return x.groupId === entry.groupId && (x.kind === 'game' || x.kind === 'asset'); });
+        var total = group.reduce(function (n, x) { return n + (x.size || (x.blob && x.blob.size) || 0); }, 0);
+        if (total > 90 * 1024 * 1024) throw new Error('This game is larger than 90 MB. GitHub has a file-size limit, so reduce the assets before publishing.');
+        if (!group.some(function (x) { return normPath(x.path).toLowerCase() === normPath(entry.path).toLowerCase(); })) {
+          throw new Error('The main HTML file is missing from its game folder.');
+        }
+        var packageName = safeSlug(entry.displayName || entry.name) + '-' + makeId().slice(-6).replace(/[^a-z0-9]/gi, '').toLowerCase();
+        var manifest = new Blob([JSON.stringify({
+          name: String(entry.displayName || entry.name || 'Pixel Vault Game').replace(/\.html?$/i, ''),
+          entry: normPath(entry.path), kind: 'game', version: 1
+        }, null, 2)], { type: 'application/json' });
+        var zipEntries = group.map(function (x) { return { name: normPath(x.path), blob: x.blob }; });
+        zipEntries.push({ name: '.pv-game.json', blob: manifest });
+        return makeStoredZip(zipEntries).then(function (zip) {
+          triggerDownload(zip, packageName + '.zip');
+          setStatus('Downloaded ' + packageName + '.zip. Upload it to the public game-imports folder in GitHub, then the automatic deploy adds it to the Public Catalog.', 'good');
+        });
+      }).catch(function (e) { setStatus(e.message || 'Could not export this game.', 'error'); });
+    }
+    function downloadMovieForPublic(id) {
+      getAll().then(function (items) {
+        var movie = items.find(function (x) { return x.id === id && x.kind === 'movie'; });
+        if (!movie) throw new Error('That movie is no longer in your local library.');
+        if ((movie.size || 0) > 90 * 1024 * 1024) throw new Error('This movie is larger than 90 MB. GitHub has a file-size limit; use a smaller video file for this publishing route.');
+        triggerDownload(movie.blob, baseName(movie.name || movie.displayName || 'pixel-vault-movie.mp4'));
+        setStatus('Downloaded the movie file. Upload it to the public-movies folder in GitHub, then the next deployment lists it for everyone.', 'good');
+      }).catch(function (e) { setStatus(e.message || 'Could not download the movie.', 'error'); });
+    }
+    function uploadGithubFolder(kind) {
+      var dir = kind === 'games' ? 'public-game-imports' : 'public-movies';
+      location.href = 'https://github.com/Jendry089/pixel-vault-site/upload/main/site-source/' + dir;
+    }
+    function renderPublicCatalog() {
+      setStatus('Loading the shared catalog…');
+      list.innerHTML = '<div class="pvl-empty">Loading public games and movies…</div>';
+      fetch('./public-catalog.json?pv=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (response) {
+        if (!response.ok) throw new Error('The public catalog file is not available yet.');
+        return response.json();
+      }).then(function (data) {
+        var entries = Array.isArray(data.items) ? data.items : [];
+        entries = entries.filter(function (item) { return item && (item.kind === 'game' || item.kind === 'movie') && typeof item.url === 'string'; });
+        entries.sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || '')); });
+        setStatus(entries.length + ' public item' + (entries.length === 1 ? '' : 's') + ' available to every visitor.', 'good');
+        if (!entries.length) {
+          list.innerHTML = '<div class="pvl-empty">The Public Catalog is live but empty.<br>Export a game ZIP or movie from My Library, upload it to the matching GitHub folder, and the next deployment will list it here for everyone.</div>';
+          return;
+        }
+        list.innerHTML = entries.map(function (item) {
+          var kind = item.kind === 'movie' ? 'movie' : 'game';
+          var size = item.size ? ' · ' + fmtBytes(Number(item.size) || 0) : '';
+          return '<article class="pvl-card"><strong>' + esc(item.name || 'Untitled') + '</strong><small>' +
+            (kind === 'movie' ? 'Public movie/video' : 'Public HTML game') + size + '</small><div class="pvl-card-actions">' +
+            '<button type="button" class="pvl-action" data-pvl-public-play="1" data-pvl-public-kind="' + kind + '" data-pvl-public-url="' + esc(item.url) + '" data-pvl-public-name="' + esc(item.name || 'Public item') + '">' +
+            (kind === 'movie' ? 'Watch movie' : 'Play game') + '</button></div></article>';
+        }).join('');
+      }).catch(function (e) {
+        setStatus((e.message || 'Catalog failed to load.') + ' Refresh after a successful deployment.', 'error');
+        list.innerHTML = '<div class="pvl-empty">Could not load the shared catalog. Check the deployment status and refresh the page.</div>';
+      });
+    }
+    function playPublicItem(kind, url, name) {
+      var absolute;
+      try { absolute = new URL(url, location.href).href; } catch (_) { setStatus('This public catalog item has an invalid URL.', 'error'); return; }
+      var parsed;
+      try { parsed = new URL(absolute); } catch (_) { setStatus('This public catalog item has an invalid URL.', 'error'); return; }
+      if (!/^https?:$/.test(parsed.protocol) || parsed.origin !== location.origin) {
+        setStatus('This catalog item points outside the Pixel Vault website and was not opened.', 'error'); return;
+      }
+      var root = stageOpen(name || 'Public Catalog');
+      if (kind === 'movie') {
+        var video = document.createElement('video');
+        video.controls = true; video.playsInline = true; video.preload = 'metadata'; video.src = absolute;
+        video.setAttribute('aria-label', name || 'Public movie'); root.appendChild(video);
+      } else {
+        var frame = document.createElement('iframe');
+        frame.title = name || 'Public game'; frame.src = absolute;
+        frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-pointer-lock allow-downloads allow-modals allow-presentation');
+        frame.setAttribute('allowfullscreen', 'true'); frame.setAttribute('referrerpolicy', 'no-referrer');
+        root.appendChild(frame);
+      }
     }
     function closeStage() {
       stage.hidden = true;
@@ -295,20 +437,31 @@
       var open = panel.style.display !== 'block';
       panel.style.display = open ? 'block' : 'none';
       launch.setAttribute('aria-expanded', String(open));
-      if (open) renderList();
+      if (open) { if (currentTab === 'catalog') renderPublicCatalog(); else renderList(); }
     });
     panel.querySelector('[data-pvl-close-panel]').addEventListener('click', function () { panel.style.display = 'none'; launch.setAttribute('aria-expanded', 'false'); });
     panel.querySelectorAll('[data-pvl-tab]').forEach(function (b) { b.addEventListener('click', function () { switchTab(b.getAttribute('data-pvl-tab')); }); });
     panel.querySelector('#pvl-pick-game').addEventListener('click', function () { panel.querySelector('#pvl-game-input').click(); });
     panel.querySelector('#pvl-pick-folder').addEventListener('click', function () { panel.querySelector('#pvl-folder-input').click(); });
     panel.querySelector('#pvl-pick-movie').addEventListener('click', function () { panel.querySelector('#pvl-movie-input').click(); });
+    panel.querySelector('#pvl-upload-games').addEventListener('click', function () { uploadGithubFolder('games'); });
+    panel.querySelector('#pvl-upload-movies').addEventListener('click', function () { uploadGithubFolder('movies'); });
     panel.querySelector('#pvl-game-input').addEventListener('change', function (ev) { importGames(collectFiles(ev.target)); });
     panel.querySelector('#pvl-folder-input').addEventListener('change', function (ev) { importGames(collectFiles(ev.target)); });
     panel.querySelector('#pvl-movie-input').addEventListener('change', function (ev) { importMovies(collectFiles(ev.target)); });
     list.addEventListener('click', function (ev) {
+      var publicPlay = ev.target.closest && ev.target.closest('[data-pvl-public-play]');
+      var exportButton = ev.target.closest && ev.target.closest('[data-pvl-export]');
+      var downloadButton = ev.target.closest && ev.target.closest('[data-pvl-public-download]');
       var play = ev.target.closest && ev.target.closest('[data-pvl-play]');
       var remove = ev.target.closest && ev.target.closest('[data-pvl-remove]');
-      if (play) {
+      if (publicPlay) {
+        playPublicItem(publicPlay.getAttribute('data-pvl-public-kind'), publicPlay.getAttribute('data-pvl-public-url'), publicPlay.getAttribute('data-pvl-public-name'));
+      } else if (exportButton) {
+        exportGamePackage(exportButton.getAttribute('data-pvl-export'));
+      } else if (downloadButton) {
+        downloadMovieForPublic(downloadButton.getAttribute('data-pvl-public-download'));
+      } else if (play) {
         var id = play.getAttribute('data-pvl-play');
         if (currentTab === 'movies') launchMovie(id); else launchGame(id);
       } else if (remove) {

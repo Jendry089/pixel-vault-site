@@ -84,6 +84,23 @@ jobs:
           PY
           fi
 
+          if [ -f "site-source/pv-library-tools.js" ]; then
+            cp "site-source/pv-library-tools.js" "$site_dir/pv-library-tools.js"
+            python3 - "$site_dir/index.html" <<'PY'
+          import pathlib, sys
+          p = pathlib.Path(sys.argv[1])
+          s = p.read_text(encoding='utf-8')
+          tag = '<script src="./pv-library-tools.js" defer></script>'
+          if tag not in s:
+              pos = s.lower().rfind('</body>')
+              if pos < 0:
+                  raise SystemExit('ERROR: Cannot inject local library tools: closing body tag missing.')
+              s = s[:pos] + tag + '\n' + s[pos:]
+              p.write_text(s, encoding='utf-8')
+          print('Pixel Vault local game/movie importing and loader polish are included.')
+          PY
+          fi
+
           echo "SITE_DIR=$site_dir" >> "$GITHUB_ENV"
 
       - name: Upload website to BunnyCDN
@@ -137,8 +154,8 @@ jobs:
             if curl --fail --silent --show-error --max-time 20 \
               "https://pixelvault08.b-cdn.net/?pv_deploy_check=${GITHUB_SHA}-${attempt}" \
               -o /tmp/pv-live-index.html; then
-              if grep -q "PIXEL VAULT TOOLS INLINE" /tmp/pv-live-index.html && grep -q "PIXEL VAULT" /tmp/pv-live-index.html && grep -q "pv-search-fix.js" /tmp/pv-live-index.html; then
-                echo "Verified: the public CDN serves Pixel Vault with the search compatibility fix."
+              if grep -q "PIXEL VAULT TOOLS INLINE" /tmp/pv-live-index.html && grep -q "PIXEL VAULT" /tmp/pv-live-index.html && grep -q "pv-search-fix.js" /tmp/pv-live-index.html && grep -q "pv-library-tools.js" /tmp/pv-live-index.html; then
+                echo "Verified: the public CDN serves Pixel Vault with search fixes and local library tools."
                 ok=true
                 break
               fi

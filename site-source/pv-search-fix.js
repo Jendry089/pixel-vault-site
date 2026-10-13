@@ -1,4 +1,4 @@
-/* Pixel Vault search compatibility and in-page YouTube search */
+/* Pixel Vault search compatibility and in-page YouTube search. Direct fallback stays in the current tab. */
 (function () {
   'use strict';
   if (window.__PV_SEARCH_NAV_FIX__) return;
@@ -91,7 +91,7 @@
         return '<article class="pvyt-item"><img class="pvyt-thumb" loading="lazy" alt="" src="' + esc(thumb || '') + '">' +
           '<h3>' + esc(sn.title || 'Untitled video') + '</h3><p>' + esc(sn.channelTitle || 'YouTube') + '</p>' +
           '<div class="pvyt-config"><button class="pvyt-btn" type="button" data-pvyt-play="' + esc(id) + '">Play here</button>' +
-          '<a class="pvyt-btn" href="https://www.youtube.com/watch?v=' + encodeURIComponent(id) + '" target="_blank" rel="noopener">YouTube</a></div></article>';
+          '<a class="pvyt-btn" href="https://www.youtube.com/watch?v=' + encodeURIComponent(id) + '" rel="noopener">YouTube</a></div></article>';
       }).join('');
       grid.querySelectorAll('[data-pvyt-play]').forEach(function (button) {
         button.addEventListener('click', function () {
@@ -102,11 +102,24 @@
         });
       });
     } catch (error) {
-      status.textContent = (error && error.message ? error.message : 'Search failed.') + ' If the network blocks Google APIs or YouTube embeds, Pixel Vault cannot override that restriction.';
-      var fallback = document.createElement('button');
-      fallback.type = 'button'; fallback.className = 'pvyt-btn'; fallback.textContent = 'Open YouTube search in this tab';
-      fallback.addEventListener('click', function () { location.assign('https://www.youtube.com/results?search_query=' + encodeURIComponent(q)); });
-      status.appendChild(document.createTextNode(' ')); status.appendChild(fallback);
+      var reason = error && error.message ? error.message : '';
+      status.textContent = /failed to fetch|networkerror|load failed/i.test(reason)
+        ? 'Pixel Vault could not reach its YouTube search service.'
+        : 'YouTube search is temporarily unavailable.';
+      var note = document.createElement('p');
+      note.className = 'pvyt-muted';
+      note.textContent = 'Try opening YouTube directly in this tab, if your network allows it, or retry Pixel Vault search. This does not bypass network restrictions.';
+      status.appendChild(note);
+      var actions = document.createElement('div');
+      actions.className = 'pvyt-config';
+      var fallback = document.createElement('a');
+      fallback.className = 'pvyt-btn';
+      fallback.href = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
+      fallback.textContent = 'Open YouTube directly';
+      var retry = document.createElement('button');
+      retry.type = 'button'; retry.className = 'pvyt-btn'; retry.textContent = 'Retry Pixel Vault search';
+      retry.addEventListener('click', function () { searchYouTube(tab); });
+      actions.appendChild(fallback); actions.appendChild(retry); status.appendChild(actions);
     }
   }
   function navigateWebSearch(tab) {

@@ -261,7 +261,7 @@
         if (!entry) throw new Error('That game is no longer in your local library.');
         var group = items.filter(function (x) { return x.groupId === entry.groupId && (x.kind === 'game' || x.kind === 'asset'); });
         var total = group.reduce(function (n, x) { return n + (x.size || (x.blob && x.blob.size) || 0); }, 0);
-        if (total > 90 * 1024 * 1024) throw new Error('This game is larger than 90 MB. GitHub has a file-size limit, so reduce the assets before publishing.');
+        if (total > 24 * 1024 * 1024) throw new Error('This game is larger than 24 MB. GitHub has a file-size limit, so reduce the assets before publishing.');
         if (!group.some(function (x) { return normPath(x.path).toLowerCase() === normPath(entry.path).toLowerCase(); })) {
           throw new Error('The main HTML file is missing from its game folder.');
         }
@@ -282,7 +282,7 @@
       getAll().then(function (items) {
         var movie = items.find(function (x) { return x.id === id && x.kind === 'movie'; });
         if (!movie) throw new Error('That movie is no longer in your local library.');
-        if ((movie.size || 0) > 90 * 1024 * 1024) throw new Error('This movie is larger than 90 MB. GitHub has a file-size limit; use a smaller video file for this publishing route.');
+        if ((movie.size || 0) > 24 * 1024 * 1024) throw new Error('This movie is larger than 24 MB. GitHub has a file-size limit; use a smaller video file for this publishing route.');
         triggerDownload(movie.blob, baseName(movie.name || movie.displayName || 'pixel-vault-movie.mp4'));
         setStatus('Downloaded the movie file. Upload it to the public-movies folder in GitHub, then the next deployment lists it for everyone.', 'good');
       }).catch(function (e) { setStatus(e.message || 'Could not download the movie.', 'error'); });

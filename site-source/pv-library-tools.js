@@ -91,7 +91,7 @@
     '#pvl-panel *{box-sizing:border-box}#pvl-panel button,#pvl-stage button{font:inherit;cursor:pointer}',
     '.pvl-head{position:sticky;top:0;z-index:3;background:#0b1930ee;backdrop-filter:blur(14px);padding:14px;border-bottom:1px solid #29436a;display:flex;align-items:center;justify-content:space-between;gap:12px}',
     '.pvl-head strong{letter-spacing:.07em;font-size:13px}.pvl-close{background:#182d4b;border:1px solid #35547c;color:white;border-radius:9px;padding:7px 10px}',
-    '.pvl-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px 12px 4px}.pvl-tab{border:1px solid #304a72;background:#0d203a;color:#bbcff0;border-radius:10px;padding:10px;font-weight:800}.pvl-tab[aria-selected=true]{background:linear-gradient(135deg,#2c7ee8,#6a4ce8);color:white;border-color:#8ebaff}',
+    '.pvl-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:12px 12px 4px}.pvl-tab{border:1px solid #304a72;background:#0d203a;color:#bbcff0;border-radius:10px;padding:10px;font-weight:800}.pvl-tab[aria-selected=true]{background:linear-gradient(135deg,#2c7ee8,#6a4ce8);color:white;border-color:#8ebaff}',
     '.pvl-content{padding:12px 14px 16px}.pvl-note{font-size:12px;line-height:1.55;color:#a8bbda;margin:6px 0 12px}.pvl-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}.pvl-action{border:1px solid #5184cb;background:linear-gradient(135deg,#2475d7,#5645bd);color:white;padding:9px 12px;border-radius:10px;font-weight:800}.pvl-action.secondary{background:#132844;border-color:#35527b;color:#dceaff}.pvl-hidden-input{display:none!important}',
     '.pvl-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:12px}.pvl-card{min-width:0;background:linear-gradient(145deg,#102441,#101b30);border:1px solid #29476d;border-radius:13px;padding:12px}.pvl-card strong{display:block;overflow-wrap:anywhere;line-height:1.35}.pvl-card small{display:block;color:#a9bddb;margin:6px 0 10px;line-height:1.4}.pvl-card-actions{display:flex;gap:7px;flex-wrap:wrap}.pvl-card-actions button{font-size:12px!important;padding:7px 9px!important}.pvl-empty{border:1px dashed #385477;border-radius:12px;padding:18px;color:#afc1dc;text-align:center;line-height:1.5}.pvl-status{font-size:12px;line-height:1.5;color:#b4c7e5;min-height:18px;margin-top:9px}.pvl-status.error{color:#ffb7ad}.pvl-status.good{color:#a9f1c2}',
     '#pvl-stage[hidden]{display:none!important}#pvl-stage{position:fixed;inset:0;z-index:2147483002;background:#040812;color:#eef5ff;display:flex;flex-direction:column;font:14px system-ui}#pvl-stage .pvl-stage-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:#09152a;border-bottom:1px solid #2d466a;min-height:54px}#pvl-stage .pvl-stage-title{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:100px}#pvl-stage .pvl-stage-bar button{border:1px solid #456b9c;background:#142b4a;color:white;padding:8px 11px;border-radius:9px;font-weight:800}#pvl-stage .pvl-stage-content{flex:1;min-height:0;display:flex;align-items:stretch;justify-content:center;background:#000}#pvl-stage iframe,#pvl-stage video{display:block;width:100%;height:100%;border:0;background:#000;object-fit:contain}',
@@ -112,7 +112,7 @@
     var launch = document.createElement('button'); launch.id = 'pvl-launch'; launch.type = 'button'; launch.textContent = '+ My Library'; launch.setAttribute('aria-expanded', 'false');
     var panel = document.createElement('section'); panel.id = 'pvl-panel'; panel.setAttribute('aria-label', 'My local games and movies');
     panel.innerHTML = '<div class="pvl-head"><strong>PIXEL VAULT · MY LIBRARY</strong><button class="pvl-close" type="button" data-pvl-close-panel>Close ×</button></div>' +
-      '<div class="pvl-tabs" role="tablist"><button class="pvl-tab" type="button" data-pvl-tab="games" aria-selected="true">My Games</button><button class="pvl-tab" type="button" data-pvl-tab="movies" aria-selected="false">My Movies</button><button class="pvl-tab" type="button" data-pvl-tab="catalog" aria-selected="false">Public Catalog</button></div>' +
+      '<div class="pvl-tabs" role="tablist"><button class="pvl-tab" type="button" data-pvl-tab="games" aria-selected="true">My Games</button><button class="pvl-tab" type="button" data-pvl-tab="movies" aria-selected="false">My Movies</button><button class="pvl-tab" type="button" data-pvl-tab="catalog" aria-selected="false">Public Catalog</button><button class="pvl-tab" type="button" data-pvl-tab="review" aria-selected="false">Review Queue</button></div>' +
       '<div class="pvl-content"><div class="pvl-note" id="pvl-instructions">Import HTML games as individual files or choose a whole folder to include images, scripts, audio, and styles. Imports stay in this browser on this device.</div>' +
       '<div class="pvl-actions"><button class="pvl-action" type="button" id="pvl-pick-game">＋ Add game files</button><button class="pvl-action secondary" type="button" id="pvl-pick-folder">＋ Add game folder</button><button class="pvl-action" type="button" id="pvl-pick-movie" hidden>＋ Add movie files</button></div>' +
       '<input id="pvl-game-input" class="pvl-hidden-input" type="file" multiple accept=".html,.htm,.js,.mjs,.css,.json,.wasm,.png,.jpg,.jpeg,.webp,.gif,.svg,.mp3,.ogg,.wav,.m4a,.mp4,.webm,.woff,.woff2,.ttf,.xml,.txt">' +
@@ -121,13 +121,13 @@
       '<input id="pvl-public-game-zip-input" class="pvl-hidden-input" type="file" accept=".zip,application/zip">' +
       '<input id="pvl-public-movie-input" class="pvl-hidden-input" type="file" accept="video/*,.mp4,.webm,.m4v,.mov,.ogv,.ogg">' +
       '<div id="pvl-status" class="pvl-status" role="status"></div><div id="pvl-list" class="pvl-list"></div>' +
-      '<div class="pvl-card" id="pvl-publish-box"><strong>Publish without leaving Pixel Vault</strong><small>Publish an imported game or movie directly from this panel. A one-time secure setup is required, and only items you publish are shared with every visitor.</small><div class="pvl-card-actions"><button type="button" class="pvl-action secondary" id="pvl-upload-games">Publish a game ZIP here</button><button type="button" class="pvl-action secondary" id="pvl-upload-movies">Publish a movie file here</button></div></div>' +
+      '<div class="pvl-card" id="pvl-publish-box"><strong>Submit for owner review</strong><small>Anyone can submit a game ZIP or video here. Uploads stay private until you approve them in the owner-only Review Queue.</small><div class="pvl-card-actions"><button type="button" class="pvl-action secondary" id="pvl-upload-games">Submit game ZIP for review</button><button type="button" class="pvl-action secondary" id="pvl-upload-movies">Submit movie for review</button></div></div>' +
       '<p class="pvl-note">Local imports are private to this browser profile and are not uploaded to the public site. Large imports depend on available device storage. Folder games work best when their HTML uses ordinary relative file paths; some games that require server-side features may not run locally.</p></div>';
     var stage = document.createElement('div'); stage.id = 'pvl-stage'; stage.hidden = true; stage.setAttribute('role', 'dialog'); stage.setAttribute('aria-modal', 'true'); stage.setAttribute('aria-label', 'Local game or movie player');
     stage.innerHTML = '<div class="pvl-stage-bar"><strong class="pvl-stage-title" id="pvl-stage-title">My Library</strong><button type="button" data-pvl-fullscreen>Fullscreen</button><button type="button" data-pvl-close-stage>Back to library</button></div><div class="pvl-stage-content" id="pvl-stage-content"></div>';
     document.body.appendChild(launch); document.body.appendChild(panel); document.body.appendChild(stage);
 
-    var currentTab = 'games', currentObjectUrls = [], publishToken = '';
+    var currentTab = 'games', currentObjectUrls = [], moderationToken = '';
     var list = panel.querySelector('#pvl-list'), status = panel.querySelector('#pvl-status');
     function setStatus(text, kind) { status.textContent = text || ''; status.className = 'pvl-status' + (kind ? ' ' + kind : ''); }
     function switchTab(tab) {
@@ -136,13 +136,17 @@
       panel.querySelector('#pvl-pick-game').hidden = tab !== 'games';
       panel.querySelector('#pvl-pick-folder').hidden = tab !== 'games';
       panel.querySelector('#pvl-pick-movie').hidden = tab !== 'movies';
-      panel.querySelector('#pvl-publish-box').hidden = tab === 'catalog';
+      panel.querySelector('#pvl-publish-box').hidden = tab === 'catalog' || tab === 'review';
       panel.querySelector('#pvl-instructions').textContent = tab === 'games' ?
-        'Add HTML game files or an entire folder, including supporting images, scripts, audio, and styles. These imports stay private in this browser until you export and publish them.' :
+        'Add HTML game files or an entire folder with supporting assets. Imports stay private until submitted for owner review.' :
         (tab === 'movies' ?
-          'Add video files to play them here. These imports stay private on this device until you download and publish them.' :
-          'Public Catalog is shared with every visitor. It lists games and videos you publish through Pixel Vault; items imported only into My Library remain private.');
-      if (tab === 'catalog') renderPublicCatalog(); else renderList();
+          'Add video files to play here. Submit a movie for owner review to ask for a place in the Public Catalog.' :
+          (tab === 'catalog' ?
+            'The Public Catalog is visible to every visitor. Only submissions approved by the owner appear here.' :
+            'Private owner-only queue. Enter your moderation password to review submissions, then approve or reject each one.'));
+      if (tab === 'catalog') renderPublicCatalog();
+      else if (tab === 'review') renderReviewQueue();
+      else renderList();
     }
     function renderList() {
       setStatus('');
@@ -159,7 +163,7 @@
           var tag = currentTab === 'games' ? 'HTML game · ' + (item.path || item.name) : 'Video · ' + size;
           return '<article class="pvl-card"><strong>' + esc(title) + '</strong><small>' + esc(tag) + (currentTab === 'games' ? ' · ' + size : '') + '</small><div class="pvl-card-actions">' +
             '<button type="button" class="pvl-action" data-pvl-play="' + esc(item.id) + '">' + (currentTab === 'games' ? 'Play game' : 'Watch movie') + '</button>' +
-            (currentTab === 'games' ? '<button type="button" class="pvl-action secondary" data-pvl-export="' + esc(item.id) + '">Publish for everyone</button>' : '<button type="button" class="pvl-action secondary" data-pvl-public-download="' + esc(item.id) + '">Publish for everyone</button>') +
+            (currentTab === 'games' ? '<button type="button" class="pvl-action secondary" data-pvl-export="' + esc(item.id) + '">Submit for review</button>' : '<button type="button" class="pvl-action secondary" data-pvl-public-download="' + esc(item.id) + '">Submit for review</button>') +
             '<button type="button" class="pvl-action secondary" data-pvl-remove="' + esc(item.groupId) + '">Remove</button></div></article>';
         }).join('');
       }).catch(function (e) {
@@ -256,44 +260,30 @@
       a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
     }
-    function publishDirect(kind, filename, blob) {
-      if (!blob || !blob.size) { setStatus('Choose a non-empty file to publish.', 'error'); return; }
-      if (blob.size > 24 * 1024 * 1024) {
-        setStatus('This file is larger than 24 MB. The in-site publish route accepts files up to 24 MB.', 'error');
+    function submitForReview(kind, filename, blob) {
+      if (!blob || !blob.size) { setStatus('Choose a non-empty file to submit.', 'error'); return; }
+      if (blob.size > 20 * 1024 * 1024) {
+        setStatus('This file is larger than 20 MB. Submissions can be up to 20 MB.', 'error');
         return;
       }
-      if (!publishToken) {
-        var entered = window.prompt('Enter your private Pixel Vault publishing password. It must match the PUBLISH_ADMIN_TOKEN secret in Cloudflare. It will only stay in memory for this page session.');
-        if (!entered) { setStatus('Publishing cancelled.', ''); return; }
-        if (entered.length < 24) { setStatus('That password is too short. Use the private secret you configured in Cloudflare.', 'error'); return; }
-        publishToken = entered;
-      }
-      setStatus('Uploading to Pixel Vault…');
-      var endpoint = 'https://pixel-vault-search.hendryjavier26.workers.dev/api/publish?' +
+      setStatus('Sending to the private review queue…');
+      var endpoint = 'https://pixel-vault-search.hendryjavier26.workers.dev/api/submit?' +
         new URLSearchParams({ kind: kind, name: baseName(filename) }).toString();
       fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': kind === 'games' ? 'application/zip' : (blob.type || 'application/octet-stream'),
-          'X-Publish-Token': publishToken
-        },
+        headers: { 'Content-Type': kind === 'games' ? 'application/zip' : (blob.type || 'application/octet-stream') },
         body: blob,
         credentials: 'omit'
       }).then(function (response) {
         return response.json().catch(function () { return {}; }).then(function (data) {
-          if (!response.ok || !data.ok) {
-            if (response.status === 401) publishToken = '';
-            throw new Error(data.error || ('Publish failed (HTTP ' + response.status + ').'));
-          }
-          setStatus('Uploaded ' + (data.filename || filename) + '. Pixel Vault is updating the Public Catalog for everyone. You can stay right here.', 'good');
+          if (!response.ok || !data.ok) throw new Error(data.error || ('Submission failed (HTTP ' + response.status + ').'));
+          setStatus('Submitted successfully. It is private and will not appear publicly unless the owner approves it.', 'good');
         });
       }).catch(function (error) {
         var message = error && error.message ? error.message : '';
         if (/failed to fetch|networkerror|load failed/i.test(message)) {
-          setStatus('Pixel Vault could not reach its publishing service from this network. No item was published. Try a network that allows the Pixel Vault publishing endpoint.', 'error');
-        } else {
-          setStatus(message || 'Publishing failed. Please try again.', 'error');
-        }
+          setStatus('Could not reach the private submission service from this network. Nothing was submitted.', 'error');
+        } else setStatus(message || 'Submission failed. Please try again.', 'error');
       });
     }
     function exportGamePackage(id) {
@@ -303,7 +293,7 @@
         if (!entry) throw new Error('That game is no longer in your local library.');
         var group = items.filter(function (x) { return x.groupId === entry.groupId && (x.kind === 'game' || x.kind === 'asset'); });
         var total = group.reduce(function (n, x) { return n + (x.size || (x.blob && x.blob.size) || 0); }, 0);
-        if (total > 24 * 1024 * 1024) throw new Error('This game is larger than 24 MB. GitHub has a file-size limit, so reduce the assets before publishing.');
+        if (total > 20 * 1024 * 1024) throw new Error('This game is larger than 20 MB. Reduce its assets before submitting for review.');
         if (!group.some(function (x) { return normPath(x.path).toLowerCase() === normPath(entry.path).toLowerCase(); })) {
           throw new Error('The main HTML file is missing from its game folder.');
         }
@@ -315,7 +305,7 @@
         var zipEntries = group.map(function (x) { return { name: normPath(x.path), blob: x.blob }; });
         zipEntries.push({ name: '.pv-game.json', blob: manifest });
         return makeStoredZip(zipEntries).then(function (zip) {
-          publishDirect('games', packageName + '.zip', zip);
+          submitForReview('games', packageName + '.zip', zip);
         });
       }).catch(function (e) { setStatus(e.message || 'Could not package this game for publishing.', 'error'); });
     }
@@ -323,8 +313,8 @@
       getAll().then(function (items) {
         var movie = items.find(function (x) { return x.id === id && x.kind === 'movie'; });
         if (!movie) throw new Error('That movie is no longer in your local library.');
-        if ((movie.size || 0) > 24 * 1024 * 1024) throw new Error('This movie is larger than 24 MB. GitHub has a file-size limit; use a smaller video file for this publishing route.');
-        publishDirect('movies', baseName(movie.name || movie.displayName || 'pixel-vault-movie.mp4'), movie.blob);
+        if ((movie.size || 0) > 20 * 1024 * 1024) throw new Error('This movie is larger than 20 MB. Choose a smaller video to submit for review.');
+        submitForReview('movies', baseName(movie.name || movie.displayName || 'pixel-vault-movie.mp4'), movie.blob);
       }).catch(function (e) { setStatus(e.message || 'Could not download the movie.', 'error'); });
     }
     function publishFromPicker(kind, input) {
@@ -332,10 +322,73 @@
       if (!files.length) return;
       var file = files[0];
       if (kind === 'games' && !/\.zip$/i.test(file.name)) {
-        setStatus('Choose a game ZIP package. To publish an imported game, use its Publish for everyone button.', 'error');
+        setStatus('Choose a game ZIP package. To publish an imported game, use its Submit for review button.', 'error');
         return;
       }
-      publishDirect(kind, file.name, file);
+      submitForReview(kind, file.name, file);
+    }
+    function requestModerationToken() {
+      if (moderationToken) return moderationToken;
+      var entered = window.prompt('Owner only: enter the private PUBLISH_ADMIN_TOKEN configured in Cloudflare. This password stays in memory for this page session.');
+      if (!entered) { setStatus('Review Queue is locked. Only the site owner can open it.', ''); return ''; }
+      if (entered.length < 24) { setStatus('That moderation password is too short.', 'error'); return ''; }
+      moderationToken = entered;
+      return moderationToken;
+    }
+    function renderReviewQueue() {
+      var token = requestModerationToken();
+      if (!token) {
+        list.innerHTML = '<div class="pvl-empty">The Review Queue is private.<br>Enter the owner password to continue.</div>';
+        return;
+      }
+      setStatus('Loading private submissions…');
+      list.innerHTML = '<div class="pvl-empty">Loading review queue…</div>';
+      fetch('https://pixel-vault-search.hendryjavier26.workers.dev/api/admin/submissions', {
+        method: 'GET', headers: { 'X-Admin-Token': token }, credentials: 'omit', cache: 'no-store'
+      }).then(function (response) {
+        return response.json().catch(function () { return {}; }).then(function (data) {
+          if (!response.ok || !data.ok) {
+            if (response.status === 401) moderationToken = '';
+            throw new Error(data.error || 'Could not access the private review queue.');
+          }
+          var items = Array.isArray(data.items) ? data.items : [];
+          setStatus(items.length + ' pending submission' + (items.length === 1 ? '' : 's') + '. Submissions stay private until approved.', 'good');
+          if (!items.length) {
+            list.innerHTML = '<div class="pvl-empty">No submissions waiting for review.<br>New visitor submissions will appear here privately.</div>';
+            return;
+          }
+          list.innerHTML = items.map(function (item) {
+            var when = item.submittedAt ? new Date(item.submittedAt).toLocaleString() : 'Date unavailable';
+            var kind = item.kind === 'movies' ? 'Movie/video' : 'Game ZIP';
+            return '<article class="pvl-card"><strong>' + esc(item.name || item.filename || 'Untitled submission') + '</strong><small>' +
+              esc(kind) + ' · ' + esc(fmtBytes(Number(item.size) || 0)) + '<br>Submitted ' + esc(when) + '</small>' +
+              '<div class="pvl-card-actions"><button type="button" class="pvl-action" data-pvl-moderate="approve" data-pvl-id="' + esc(item.id) + '" data-pvl-name="' + esc(item.name || item.filename || 'item') + '">Approve & publish</button>' +
+              '<button type="button" class="pvl-action secondary" data-pvl-moderate="reject" data-pvl-id="' + esc(item.id) + '" data-pvl-name="' + esc(item.name || item.filename || 'item') + '">Reject</button></div></article>';
+          }).join('');
+        });
+      }).catch(function (error) {
+        setStatus((error && error.message) || 'Review queue unavailable.', 'error');
+        list.innerHTML = '<div class="pvl-empty">Could not load your private queue. Check the password and retry.</div>';
+      });
+    }
+    function moderateSubmission(action, id, name) {
+      var token = requestModerationToken();
+      if (!token) return;
+      if (action === 'approve' && !window.confirm('Approve "' + name + '" and publish it for every visitor?')) return;
+      if (action === 'reject' && !window.confirm('Reject "' + name + '" and permanently remove it from the private queue?')) return;
+      setStatus(action === 'approve' ? 'Approving and publishing…' : 'Rejecting submission…');
+      fetch('https://pixel-vault-search.hendryjavier26.workers.dev/api/admin/submissions/' + encodeURIComponent(id) + '/' + action, {
+        method: 'POST', headers: { 'X-Admin-Token': token }, credentials: 'omit'
+      }).then(function (response) {
+        return response.json().catch(function () { return {}; }).then(function (data) {
+          if (!response.ok || !data.ok) {
+            if (response.status === 401) moderationToken = '';
+            throw new Error(data.error || (action + ' failed.'));
+          }
+          setStatus(action === 'approve' ? 'Approved. Deployment will update the Public Catalog for everyone.' : 'Rejected. The submission was removed.', 'good');
+          renderReviewQueue();
+        });
+      }).catch(function (error) { setStatus((error && error.message) || 'Moderation action failed.', 'error'); });
     }
     function renderPublicCatalog() {
       setStatus('Loading the shared catalog…');
@@ -349,7 +402,7 @@
         entries.sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || '')); });
         setStatus(entries.length + ' public item' + (entries.length === 1 ? '' : 's') + ' available to every visitor.', 'good');
         if (!entries.length) {
-          list.innerHTML = '<div class="pvl-empty">The Public Catalog is live but empty.<br>Use Publish for everyone beside a game or movie. After secure publishing is configured, new items appear here for everyone after deployment.</div>';
+          list.innerHTML = '<div class="pvl-empty">The Public Catalog is live but empty.<br>Submit a game or movie for owner review. Approved items appear here for everyone after deployment.</div>';
           return;
         }
         list.innerHTML = entries.map(function (item) {
@@ -483,7 +536,7 @@
       var open = panel.style.display !== 'block';
       panel.style.display = open ? 'block' : 'none';
       launch.setAttribute('aria-expanded', String(open));
-      if (open) { if (currentTab === 'catalog') renderPublicCatalog(); else renderList(); }
+      if (open) { if (currentTab === 'catalog') renderPublicCatalog(); else if (currentTab === 'review') renderReviewQueue(); else renderList(); }
     });
     panel.querySelector('[data-pvl-close-panel]').addEventListener('click', function () { panel.style.display = 'none'; launch.setAttribute('aria-expanded', 'false'); });
     panel.querySelectorAll('[data-pvl-tab]').forEach(function (b) { b.addEventListener('click', function () { switchTab(b.getAttribute('data-pvl-tab')); }); });
@@ -498,12 +551,15 @@
     panel.querySelector('#pvl-folder-input').addEventListener('change', function (ev) { importGames(collectFiles(ev.target)); });
     panel.querySelector('#pvl-movie-input').addEventListener('change', function (ev) { importMovies(collectFiles(ev.target)); });
     list.addEventListener('click', function (ev) {
+      var reviewAction = ev.target.closest && ev.target.closest('[data-pvl-moderate]');
       var publicPlay = ev.target.closest && ev.target.closest('[data-pvl-public-play]');
       var exportButton = ev.target.closest && ev.target.closest('[data-pvl-export]');
       var downloadButton = ev.target.closest && ev.target.closest('[data-pvl-public-download]');
       var play = ev.target.closest && ev.target.closest('[data-pvl-play]');
       var remove = ev.target.closest && ev.target.closest('[data-pvl-remove]');
-      if (publicPlay) {
+      if (reviewAction) {
+        moderateSubmission(reviewAction.getAttribute('data-pvl-moderate'), reviewAction.getAttribute('data-pvl-id'), reviewAction.getAttribute('data-pvl-name'));
+      } else if (publicPlay) {
         playPublicItem(publicPlay.getAttribute('data-pvl-public-kind'), publicPlay.getAttribute('data-pvl-public-url'), publicPlay.getAttribute('data-pvl-public-name'));
       } else if (exportButton) {
         exportGamePackage(exportButton.getAttribute('data-pvl-export'));

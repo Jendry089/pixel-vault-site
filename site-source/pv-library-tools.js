@@ -118,14 +118,16 @@
       '<input id="pvl-game-input" class="pvl-hidden-input" type="file" multiple accept=".html,.htm,.js,.mjs,.css,.json,.wasm,.png,.jpg,.jpeg,.webp,.gif,.svg,.mp3,.ogg,.wav,.m4a,.mp4,.webm,.woff,.woff2,.ttf,.xml,.txt">' +
       '<input id="pvl-folder-input" class="pvl-hidden-input" type="file" multiple webkitdirectory directory>' +
       '<input id="pvl-movie-input" class="pvl-hidden-input" type="file" multiple accept="video/*,.mp4,.webm,.m4v,.mov,.ogv">' +
+      '<input id="pvl-public-game-zip-input" class="pvl-hidden-input" type="file" accept=".zip,application/zip">' +
+      '<input id="pvl-public-movie-input" class="pvl-hidden-input" type="file" accept="video/*,.mp4,.webm,.m4v,.mov,.ogv,.ogg">' +
       '<div id="pvl-status" class="pvl-status" role="status"></div><div id="pvl-list" class="pvl-list"></div>' +
-      '<div class="pvl-card" id="pvl-publish-box"><strong>Share with everyone</strong><small>Local imports are private until you publish them. Export a game ZIP or movie file, then upload it to the matching GitHub folder. The next automatic deployment adds it to the Public Catalog for every visitor.</small><div class="pvl-card-actions"><button type="button" class="pvl-action secondary" id="pvl-upload-games">Upload game ZIP to GitHub</button><button type="button" class="pvl-action secondary" id="pvl-upload-movies">Upload movie to GitHub</button></div></div>' +
+      '<div class="pvl-card" id="pvl-publish-box"><strong>Publish without leaving Pixel Vault</strong><small>Publish an imported game or movie directly from this panel. A one-time secure setup is required, and only items you publish are shared with every visitor.</small><div class="pvl-card-actions"><button type="button" class="pvl-action secondary" id="pvl-upload-games">Publish a game ZIP here</button><button type="button" class="pvl-action secondary" id="pvl-upload-movies">Publish a movie file here</button></div></div>' +
       '<p class="pvl-note">Local imports are private to this browser profile and are not uploaded to the public site. Large imports depend on available device storage. Folder games work best when their HTML uses ordinary relative file paths; some games that require server-side features may not run locally.</p></div>';
     var stage = document.createElement('div'); stage.id = 'pvl-stage'; stage.hidden = true; stage.setAttribute('role', 'dialog'); stage.setAttribute('aria-modal', 'true'); stage.setAttribute('aria-label', 'Local game or movie player');
     stage.innerHTML = '<div class="pvl-stage-bar"><strong class="pvl-stage-title" id="pvl-stage-title">My Library</strong><button type="button" data-pvl-fullscreen>Fullscreen</button><button type="button" data-pvl-close-stage>Back to library</button></div><div class="pvl-stage-content" id="pvl-stage-content"></div>';
     document.body.appendChild(launch); document.body.appendChild(panel); document.body.appendChild(stage);
 
-    var currentTab = 'games', currentObjectUrls = [];
+    var currentTab = 'games', currentObjectUrls = [], publishToken = '';
     var list = panel.querySelector('#pvl-list'), status = panel.querySelector('#pvl-status');
     function setStatus(text, kind) { status.textContent = text || ''; status.className = 'pvl-status' + (kind ? ' ' + kind : ''); }
     function switchTab(tab) {
@@ -139,7 +141,7 @@
         'Add HTML game files or an entire folder, including supporting images, scripts, audio, and styles. These imports stay private in this browser until you export and publish them.' :
         (tab === 'movies' ?
           'Add video files to play them here. These imports stay private on this device until you download and publish them.' :
-          'Public Catalog is shared with every visitor. It lists games and videos uploaded to the public folders in the Pixel Vault GitHub repository.');
+          'Public Catalog is shared with every visitor. It lists games and videos you publish through Pixel Vault; items imported only into My Library remain private.');
       if (tab === 'catalog') renderPublicCatalog(); else renderList();
     }
     function renderList() {
@@ -157,7 +159,7 @@
           var tag = currentTab === 'games' ? 'HTML game · ' + (item.path || item.name) : 'Video · ' + size;
           return '<article class="pvl-card"><strong>' + esc(title) + '</strong><small>' + esc(tag) + (currentTab === 'games' ? ' · ' + size : '') + '</small><div class="pvl-card-actions">' +
             '<button type="button" class="pvl-action" data-pvl-play="' + esc(item.id) + '">' + (currentTab === 'games' ? 'Play game' : 'Watch movie') + '</button>' +
-            (currentTab === 'games' ? '<button type="button" class="pvl-action secondary" data-pvl-export="' + esc(item.id) + '">Export public ZIP</button>' : '<button type="button" class="pvl-action secondary" data-pvl-public-download="' + esc(item.id) + '">Download to publish</button>') +
+            (currentTab === 'games' ? '<button type="button" class="pvl-action secondary" data-pvl-export="' + esc(item.id) + '">Publish for everyone</button>' : '<button type="button" class="pvl-action secondary" data-pvl-public-download="' + esc(item.id) + '">Publish for everyone</button>') +
             '<button type="button" class="pvl-action secondary" data-pvl-remove="' + esc(item.groupId) + '">Remove</button></div></article>';
         }).join('');
       }).catch(function (e) {
@@ -254,6 +256,46 @@
       a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
     }
+    function publishDirect(kind, filename, blob) {
+      if (!blob || !blob.size) { setStatus('Choose a non-empty file to publish.', 'error'); return; }
+      if (blob.size > 24 * 1024 * 1024) {
+        setStatus('This file is larger than 24 MB. The in-site publish route accepts files up to 24 MB.', 'error');
+        return;
+      }
+      if (!publishToken) {
+        var entered = window.prompt('Enter your private Pixel Vault publishing password. It must match the PUBLISH_ADMIN_TOKEN secret in Cloudflare. It will only stay in memory for this page session.');
+        if (!entered) { setStatus('Publishing cancelled.', ''); return; }
+        if (entered.length < 24) { setStatus('That password is too short. Use the private secret you configured in Cloudflare.', 'error'); return; }
+        publishToken = entered;
+      }
+      setStatus('Uploading to Pixel Vault…');
+      var endpoint = 'https://pixel-vault-search.hendryjavier26.workers.dev/api/publish?' +
+        new URLSearchParams({ kind: kind, name: baseName(filename) }).toString();
+      fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': kind === 'games' ? 'application/zip' : (blob.type || 'application/octet-stream'),
+          'X-Publish-Token': publishToken
+        },
+        body: blob,
+        credentials: 'omit'
+      }).then(function (response) {
+        return response.json().catch(function () { return {}; }).then(function (data) {
+          if (!response.ok || !data.ok) {
+            if (response.status === 401) publishToken = '';
+            throw new Error(data.error || ('Publish failed (HTTP ' + response.status + ').'));
+          }
+          setStatus('Uploaded ' + (data.filename || filename) + '. Pixel Vault is updating the Public Catalog for everyone. You can stay right here.', 'good');
+        });
+      }).catch(function (error) {
+        var message = error && error.message ? error.message : '';
+        if (/failed to fetch|networkerror|load failed/i.test(message)) {
+          setStatus('Pixel Vault could not reach its publishing service from this network. No item was published. Try a network that allows the Pixel Vault publishing endpoint.', 'error');
+        } else {
+          setStatus(message || 'Publishing failed. Please try again.', 'error');
+        }
+      });
+    }
     function exportGamePackage(id) {
       setStatus('Preparing a ZIP for public publishing…');
       getAll().then(function (items) {
@@ -273,23 +315,27 @@
         var zipEntries = group.map(function (x) { return { name: normPath(x.path), blob: x.blob }; });
         zipEntries.push({ name: '.pv-game.json', blob: manifest });
         return makeStoredZip(zipEntries).then(function (zip) {
-          triggerDownload(zip, packageName + '.zip');
-          setStatus('Downloaded ' + packageName + '.zip. Upload it to the public game-imports folder in GitHub, then the automatic deploy adds it to the Public Catalog.', 'good');
+          publishDirect('games', packageName + '.zip', zip);
         });
-      }).catch(function (e) { setStatus(e.message || 'Could not export this game.', 'error'); });
+      }).catch(function (e) { setStatus(e.message || 'Could not package this game for publishing.', 'error'); });
     }
     function downloadMovieForPublic(id) {
       getAll().then(function (items) {
         var movie = items.find(function (x) { return x.id === id && x.kind === 'movie'; });
         if (!movie) throw new Error('That movie is no longer in your local library.');
         if ((movie.size || 0) > 24 * 1024 * 1024) throw new Error('This movie is larger than 24 MB. GitHub has a file-size limit; use a smaller video file for this publishing route.');
-        triggerDownload(movie.blob, baseName(movie.name || movie.displayName || 'pixel-vault-movie.mp4'));
-        setStatus('Downloaded the movie file. Upload it to the public-movies folder in GitHub, then the next deployment lists it for everyone.', 'good');
+        publishDirect('movies', baseName(movie.name || movie.displayName || 'pixel-vault-movie.mp4'), movie.blob);
       }).catch(function (e) { setStatus(e.message || 'Could not download the movie.', 'error'); });
     }
-    function uploadGithubFolder(kind) {
-      var dir = kind === 'games' ? 'public-game-imports' : 'public-movies';
-      location.href = 'https://github.com/Jendry089/pixel-vault-site/upload/main/site-source/' + dir;
+    function publishFromPicker(kind, input) {
+      var files = collectFiles(input);
+      if (!files.length) return;
+      var file = files[0];
+      if (kind === 'games' && !/\.zip$/i.test(file.name)) {
+        setStatus('Choose a game ZIP package. To publish an imported game, use its Publish for everyone button.', 'error');
+        return;
+      }
+      publishDirect(kind, file.name, file);
     }
     function renderPublicCatalog() {
       setStatus('Loading the shared catalog…');
@@ -303,7 +349,7 @@
         entries.sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || '')); });
         setStatus(entries.length + ' public item' + (entries.length === 1 ? '' : 's') + ' available to every visitor.', 'good');
         if (!entries.length) {
-          list.innerHTML = '<div class="pvl-empty">The Public Catalog is live but empty.<br>Export a game ZIP or movie from My Library, upload it to the matching GitHub folder, and the next deployment will list it here for everyone.</div>';
+          list.innerHTML = '<div class="pvl-empty">The Public Catalog is live but empty.<br>Use Publish for everyone beside a game or movie. After secure publishing is configured, new items appear here for everyone after deployment.</div>';
           return;
         }
         list.innerHTML = entries.map(function (item) {
@@ -444,8 +490,10 @@
     panel.querySelector('#pvl-pick-game').addEventListener('click', function () { panel.querySelector('#pvl-game-input').click(); });
     panel.querySelector('#pvl-pick-folder').addEventListener('click', function () { panel.querySelector('#pvl-folder-input').click(); });
     panel.querySelector('#pvl-pick-movie').addEventListener('click', function () { panel.querySelector('#pvl-movie-input').click(); });
-    panel.querySelector('#pvl-upload-games').addEventListener('click', function () { uploadGithubFolder('games'); });
-    panel.querySelector('#pvl-upload-movies').addEventListener('click', function () { uploadGithubFolder('movies'); });
+    panel.querySelector('#pvl-upload-games').addEventListener('click', function () { panel.querySelector('#pvl-public-game-zip-input').click(); });
+    panel.querySelector('#pvl-upload-movies').addEventListener('click', function () { panel.querySelector('#pvl-public-movie-input').click(); });
+    panel.querySelector('#pvl-public-game-zip-input').addEventListener('change', function (ev) { publishFromPicker('games', ev.target); });
+    panel.querySelector('#pvl-public-movie-input').addEventListener('change', function (ev) { publishFromPicker('movies', ev.target); });
     panel.querySelector('#pvl-game-input').addEventListener('change', function (ev) { importGames(collectFiles(ev.target)); });
     panel.querySelector('#pvl-folder-input').addEventListener('change', function (ev) { importGames(collectFiles(ev.target)); });
     panel.querySelector('#pvl-movie-input').addEventListener('change', function (ev) { importMovies(collectFiles(ev.target)); });
